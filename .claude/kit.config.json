@@ -55,7 +55,10 @@
     },
     "qa": null,
     "staging": null,
-    "production": null
+    "production": {
+      "api": "https://hr-solutions.onrender.com",
+      "web": "https://hr-solutions.onrender.com"
+    }
   },
   "e2e": {
     "loginFlow": "auth/login",
@@ -78,7 +81,7 @@
       "workflow": null
     },
     "production": {
-      "workflow": null
+      "workflow": "deploy.yml"
     },
     "tag": {
       "format": "{date}-{env}{n}",

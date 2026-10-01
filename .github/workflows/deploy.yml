@@ -1,0 +1,14 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+concurrency: deploy
+permissions: {}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl -fsS -o /dev/null -X POST "$RENDER_DEPLOY_HOOK_URL"
