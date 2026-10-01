@@ -2,6 +2,7 @@ import path from 'node:path';
 import express, { type Express } from 'express';
 import { errorHandler, notFound } from './common/errors.js';
 import { env } from './config/env.js';
+import { employeesRouter } from './modules/employees/employees.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -11,6 +12,7 @@ export function createApp(): Express {
     res.json({ status: 'ok' });
   });
 
+  app.use('/api/employees', employeesRouter);
   app.use('/api', notFound);
 
   if (env.NODE_ENV === 'production') {
