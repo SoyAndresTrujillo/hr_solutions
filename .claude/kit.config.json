@@ -1,0 +1,89 @@
+{
+  "project": "hr_solutions",
+  "ticketPrefix": "HR",
+  "ticketsDir": "tickets",
+  "docsDir": ".claude/docs/ai",
+  "statuses": [
+    "TODO",
+    "IN PROGRESS",
+    "CODE REVIEW",
+    "READY FOR QA",
+    "QA FAILED",
+    "DONE"
+  ],
+  "doneStatuses": [
+    "READY FOR QA",
+    "DONE"
+  ],
+  "statusFlow": {
+    "started": "IN PROGRESS",
+    "prOpened": "CODE REVIEW",
+    "ciGreen": "READY FOR QA",
+    "qaFail": "QA FAILED",
+    "qaPass": null
+  },
+  "estimateScale": [
+    1,
+    2,
+    3,
+    5,
+    8,
+    13,
+    21,
+    34
+  ],
+  "git": {
+    "mainBranch": "main",
+    "remote": "origin",
+    "worktreesDir": ".claude/worktrees"
+  },
+  "stack": "node-react-vite",
+  "packageManager": "npm",
+  "workspaces": {
+    "api": "api",
+    "web": "web"
+  },
+  "testLock": "/tmp/hr_solutions-test.lock",
+  "techLead": {
+    "name": null,
+    "github": null
+  },
+  "environments": {
+    "local": {
+      "api": "http://localhost:3001",
+      "web": "http://localhost:5173"
+    },
+    "qa": null,
+    "staging": null,
+    "production": null
+  },
+  "e2e": {
+    "loginFlow": "auth/login",
+    "credentialsEnv": {
+      "email": "E2E_EMAIL",
+      "password": "E2E_PASSWORD"
+    },
+    "token": "localStorage:token",
+    "envFile": "api/.env"
+  },
+  "ci": {
+    "ignoreWorkflows": []
+  },
+  "deploy": {
+    "qa": {
+      "workflows": [],
+      "trigger": "push-main"
+    },
+    "staging": {
+      "workflow": null
+    },
+    "production": {
+      "workflow": null
+    },
+    "tag": {
+      "format": "{date}-{env}{n}",
+      "productionEnv": "P",
+      "stagingEnv": "S"
+    }
+  }
+}

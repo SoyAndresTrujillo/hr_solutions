@@ -1,0 +1,14 @@
+tickets/
+.claude/docs/
+.claude/worktrees/
+.claude/code-reviews/
+.claude/settings.local.json
+.claude/skills/e2e/node_modules/
+agent-kit/
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store

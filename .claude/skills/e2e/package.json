@@ -1,0 +1,11 @@
+{
+  "name": "kit-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared Playwright session + per-module flow library for kit skills",
+  "main": "session.mjs",
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}
