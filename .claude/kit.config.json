@@ -56,8 +56,8 @@
     "qa": null,
     "staging": null,
     "production": {
-      "api": "https://hr-solutions.onrender.com",
-      "web": "https://hr-solutions.onrender.com"
+      "api": "https://hr-solutions-1l7x.onrender.com",
+      "web": "https://hr-solutions-1l7x.onrender.com"
     }
   },
   "e2e": {
