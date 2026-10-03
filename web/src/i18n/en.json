@@ -20,5 +20,9 @@
   "employees.contractType.contractor": "Contractor",
   "employees.status.active": "Active",
   "employees.status.on_leave": "On leave",
-  "employees.status.terminated": "Terminated"
+  "employees.status.terminated": "Terminated",
+  "employees.search.label": "Search employees",
+  "employees.clearAll": "Clear all",
+  "employees.empty": "No matching employees.",
+  "employees.filter.label": "Filter"
 }
