@@ -21,4 +21,4 @@ Gotchas: <traps>
 
 ## Modules
 
-_(none yet)_
+- [employees](employees.md) — employee directory API + table (HR-1, HR-2)
