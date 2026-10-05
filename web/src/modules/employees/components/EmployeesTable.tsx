@@ -101,7 +101,7 @@ export function EmployeesTable({ employees }: { employees: Employee[] }) {
     const col = COLUMNS.find((c) => c.label === sort?.label)
     if (!sort || !col) return matching
     const sign = sort.dir === 'asc' ? 1 : -1
-    return matching.toSorted((a, b) => sign * compare(col, a, b))
+    return [...matching].sort((a, b) => sign * compare(col, a, b))
   }, [employees, filters, search, sort])
 
   function toggleOption(label: MessageKey, text: string) {
