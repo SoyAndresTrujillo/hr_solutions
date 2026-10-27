@@ -25,3 +25,4 @@ Drop any finding you cannot state as a concrete failure: input → wrong output,
 ## Output
 
 Return the review body in the shape of the template the skill names. No attribution footer.
+When given `.claude/REVIEW.md`, return only its table and count line, and edit nothing.

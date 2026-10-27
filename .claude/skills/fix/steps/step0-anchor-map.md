@@ -21,8 +21,13 @@
      checkout (`_shared/output-location.md`): one copy of docs and tickets, not one per worktree.
 4. Create `<out>` if missing. Persist the PR-shape answer to `<out>/pr-shape.md` as a single line:
    `single-fix` or `bundle-fix`. NO other content — `/create-pr` reads only the first non-empty line.
-5. Check existing artifacts in `<out>` — if bug-report/root-cause/patch docs exist, ask: reuse and skip
-   ahead, or regenerate?
+4.5. **Progress tree.** `<out>/progress.md` exists → resume from it
+   (`.claude/skills/_shared/progress-tree.md` §4). Else write the `/fix` skeleton (§5) now, before
+   anything else runs. Started by `/bug-bundle` → update that bug's branch in the bundle tree instead;
+   no own file.
+5. Check existing artifacts in `<out>` against the tree — if bug-report/root-cause/patch docs exist
+   **and their gate item is approved**, ask: reuse and skip ahead, or regenerate? An artifact without
+   an approved gate item was never approved — re-present its gate.
 6. **Ticket ingest — run it here, once.** Follow `.claude/skills/_shared/ticket-ingest.md`: it writes
    `<out>/ticket.md` (+ `images/`) and carries its own HARD-STOP approval gate. **No later step
    re-reads the tracker** — every one reads the file this step wrote. A ticket too underspecified to

@@ -1,6 +1,6 @@
 ---
 name: refiner
-description: Refines a task into a 100% complete functional definition (zero code) that a developer can implement without asking a single behavior question. Drives a loop of targeted repository investigation, short batches of tappable questions to the user, and senior gap review, writing everything into <out>/functional.md and <out>/questions.md. Use this skill aggressively whenever the user wants to refine, define, detail, scope, spec out, or resume work on a task or ticket — phrases like "refina esta tarea", "define esta tarea a nivel funcional", "vamos a detallar HR-12", "retoma el refinamiento de esta carpeta", "refine this ticket", "let's define this at a functional level", "let's spec this out", "resume refining this folder" — even if they do not mention a ticket id or the word "refinement". Do NOT use it to implement or fix code, explain what a module does, review a PR, write tests, or answer one-off product questions.
+description: Refines a task into a 100% complete functional definition (zero code) that a developer can implement without asking a single behavior question. Drives a loop of targeted repository investigation, short batches of tappable questions to the user, and senior gap review, writing everything into <out>/functional.md and <out>/questions.md. Use this skill aggressively whenever the user wants to refine, define, detail, scope, spec out, or resume work on a task or ticket — phrases like "refina esta tarea", "define esta tarea a nivel funcional", "vamos a detallar HR-12", "retoma el refinamiento de esta carpeta", "refine this ticket", "let's define this at a functional level", "let's spec this out", "resume refining this folder", "publica el refinamiento", "publish the refinement to the ticket" — even if they do not mention a ticket id or the word "refinement". Do NOT use it to implement or fix code, explain what a module does, review a PR, write tests, or answer one-off product questions.
 model: opus
 ---
 
@@ -61,9 +61,10 @@ rewritten as what the user sees before they land in the file.
 - The repository is **read-only**. Never edit code, never commit, never branch, never run a git
   command that changes state.
 - The only files you write are `<out>/functional.md` and `<out>/questions.md` (`<out>` from
-  `.claude/skills/_shared/output-location.md`). Two exceptions, each only on the user's explicit yes:
-  creating a missing ticket with `ticket.mjs new` (Step 0), and copying the acceptance criteria into the
-  ticket on READY (Step 5).
+  `.claude/skills/_shared/output-location.md`). Three exceptions, each only on the user's explicit yes:
+  creating a missing ticket with `ticket.mjs new` (Step 0), copying the acceptance criteria into the
+  ticket on READY (Step 5), and publishing the approved refinement as a ticket comment with its draft
+  `<out>/refinement-comment.md` (Step 6).
 - Never write code, file paths, class names, table names or endpoints into the documents — with one
   exception: the **"Files in scope — developer reference"** table at the end of the functional doc,
   written in code terms on purpose. See "Product language" below.
@@ -71,7 +72,8 @@ rewritten as what the user sees before they land in the file.
 
 ## Artifacts
 
-`<out>/` holds exactly two refiner files:
+`<out>/` holds two refiner files (plus the Step 6 comment draft `refinement-comment.md`, only once
+the user asks to publish):
 
 | File            | From template             | Holds                                                                                                            |
 | --------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -274,6 +276,31 @@ If new questions appeared that can be answered right now, or a review still owes
 Step 1 for another iteration.
 
 When the external answers arrive, running the skill again on the same folder picks up at Step 0.
+
+### Step 6 — Publish to the ticket
+
+_Offered once after READY or PAUSED. Also the entry point when the user asks to publish an existing
+refinement ("publica el refinamiento", "publish the refinement") — then run Step 0 to find `<out>` and
+skip straight here._
+
+The ticket comment is the approved definition the team reads; `functional.md` stays the full record.
+Draft `<out>/refinement-comment.md` in the shape from `.claude/skills/_shared/ticket-comment.md`, in
+English, from `functional.md` and `questions.md` only — cite nothing they do not state:
+
+- **Summary** — what changes, for whom, in one to three product-language bullets.
+- **Decisions** — the few that most change what gets built, each with its reason.
+- **Needs** — one bullet per open question that blocks development or QA, with who owes it; on PAUSED
+  add "Do not commit to a delivery date while blocking questions remain."
+- **Links** — the full definition, attached below.
+
+Show the draft, then ask (`AskUserQuestion`: Approve / Request changes / Skip). Publish **only** on
+Approve; Request changes → revise and ask again; Skip → stop.
+
+```bash
+node .claude/skills/_lib/ticket.mjs comment <ID> <out>/refinement-comment.md --attach <out>/functional.md
+```
+
+Confirm in the conversation with the ticket ID and the comment date.
 
 ## Product language: zero code
 

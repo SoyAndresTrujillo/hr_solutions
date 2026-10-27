@@ -25,7 +25,7 @@ the file, ask Approve / Request changes / Regenerate. Do not enter Step 1 in the
 | Children of a parent (bug round) | `ticket.mjs list <PARENT>` |
 | Current status | `ticket.mjs status <ID>` |
 | Move status | `ticket.mjs transition <ID> --to "<STATUS>"` (names from `statusFlow`) |
-| Comment + evidence | `ticket.mjs comment <ID> <file.md> --attach <files…>` |
+| Comment + evidence | `ticket.mjs comment <ID> <file.md> --attach <files…>` — body in the short shape of `_shared/ticket-comment.md` unless the skill gives its own (qa-report) |
 | Story points | `ticket.mjs estimate <ID> <points>` |
 
 Re-read the status right before any transition. Never transition a parent ticket from a child's pipeline.

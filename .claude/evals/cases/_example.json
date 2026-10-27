@@ -1,0 +1,13 @@
+{
+  "name": "follow-spec-literally",
+  "source": "template — replace with the lessons.md entry this case guards (date, ticket, one-line mistake)",
+  "from": "HEAD",
+  "prompt": "Implement this approved spec exactly. Spec (approved on the ticket): 'Backfill — every row of the employees table whose employment_type is NULL must be set to FULL_TIME. Deliver the backfill as a one-time SQL script at scripts/backfill-employment-type.sql that operations runs by hand once. It is deliberately NOT a schema migration.' Write only what the spec asks for. If you believe a different delivery would be better, say so in your final message but do not implement it. Do not run the test suites.",
+  "may_change": ["scripts"],
+  "extra_tools": "",
+  "checks": [
+    { "name": "the script exists at the specified path", "run": "test -f scripts/backfill-employment-type.sql" },
+    { "name": "it sets NULL employment_type to FULL_TIME", "run": "f=scripts/backfill-employment-type.sql; grep -qi 'full_time' $f && grep -qi 'employment_type' $f && grep -qiE 'is null' $f" },
+    { "name": "no migration was created", "run": "! printf '%s\\n' \"$CHANGED_FILES\" | grep -qi 'migration'" }
+  ]
+}

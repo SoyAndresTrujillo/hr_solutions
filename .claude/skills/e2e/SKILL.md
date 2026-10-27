@@ -113,6 +113,8 @@ Run the sweep before a QA round so a stale selector fails here instead of mid-ti
 
 | Trap | Silent failure it causes |
 |---|---|
+| an announcement dialog (release notes, onboarding, cookie consent) on every fresh session | its overlay swallows pointer events page-wide, so the first click anywhere times out against an element reported *visible, enabled and stable* — it never looks like a modal problem. `open()` dismisses it and fails loudly if one will not close; `open({ dismissModals: false })` for a scenario that tests the dialog itself |
+| an option name that is not in the list | 30s click timeout that reads as a broken selector; `select` names the miss and prints the real options |
 | toast probed after the fade | `""` — indistinguishable from "no message shown", which is the bug. `s.toast(action)` observes `role=alert` / `role=status` / `aria-live` before acting |
 | a dev server never reaches network idle | a bare `goto: Timeout` at session open that kills the scenario before any assertion; `goto` falls back to DOM-ready |
 | synthetic events on custom selects | dropdown never opens; `select` uses real clicks and `getByRole('option')` |
@@ -135,6 +137,8 @@ next to the flow that absorbs them.
   for the report.
 - Anything that changes access (a password, a role) is reverted immediately and the
   revert is read back and reported.
+- **Never create, disable or re-role a user account** to unblock a run — stop and ask; reuse the
+  configured logins.
 - Do not retry a bad credential in a loop — most apps lock the account.
 
 ## Consumers

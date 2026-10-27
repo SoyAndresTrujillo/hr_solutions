@@ -86,7 +86,14 @@
     "tag": {
       "format": "{date}-{env}{n}",
       "productionEnv": "P",
-      "stagingEnv": "S"
+      "stagingEnv": "S",
+      "allEnv": "A",
+      "cherryPickEnv": "C"
     }
+  },
+  "guards": {
+    "migrationPaths": null,
+    "manifests": null,
+    "forbiddenLiterals": []
   }
 }

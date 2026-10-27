@@ -55,7 +55,8 @@ Never two modules in parallel. Within a module: backend, then frontend (the FE c
 contract of the same module). Dispatch with the Agent tool — each module ends in a user gate, so a
 Workflow run cannot span modules.
 
-For each module `Mi`:
+For each module `Mi` — add its branch to the progress tree (`_shared/progress-tree.md` §5) and mark
+each lettered sub-step `[~]` / `[x]` as it runs:
 
 **a. Read handoffs.** Main lists `<output-folder>/module-handoff/M*.md` for every approved module and
 passes the paths to the agent. The agent reads them before coding.
@@ -160,6 +161,6 @@ The pipeline's integration steps run over the whole branch (`main...HEAD` + unco
 
 ## 6. Resume after context summarization
 
-State lives on disk: the last handoff marked `APPROVED` is the last passed gate, and `git log` shows
-its checkpoint. Re-read this file and the current step file, then restate: "M1..M<k> approved,
-resuming M<k+1>".
+State lives on disk: the progress tree shows the exact sub-step, the last handoff marked `APPROVED`
+is the last passed gate, and `git log` shows its checkpoint. Re-read this file and the current step
+file, then restate: "M1..M<k> approved, resuming M<k+1>".

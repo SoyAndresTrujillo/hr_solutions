@@ -59,9 +59,11 @@ Same three triggers as `/implement` Step 2: refactor (§S2), migration (§S5), n
 `.claude/skills/_shared/team-rules.md`. A fix that hits one **stops here** with the G0 proposal draft
 (what / why / risk) and waits for the approver's confirmation: `techLead.name` in
 `.claude/kit.config.json`, or **the user** when it is `null`. Record both parts on the ticket per
-team-rules §G0 (`ticket.mjs comment <ID> <file>`). A fix rarely needs a refactor — if the phases want
-one, the usual answer is a narrower patch, not an approval request (§S2: an approved refactor ships in
-its own PR anyway).
+team-rules §G0 (`ticket.mjs comment <ID> <file>`). On the user's "G0 recorded" confirmation, write
+`<out>/g0-approved.md` (trigger, ticket comment date, approver, date) — the `g0-gate` hook
+(`.claude/hooks/g0-gate.cjs`) blocks the migration or dependency change until it exists. A fix rarely
+needs a refactor — if the phases want one, the usual answer is a narrower patch, not an approval
+request (§S2: an approved refactor ships in its own PR anyway).
 
 ## APPROVAL GATE (per router protocol)
 ```

@@ -49,6 +49,27 @@ async function loadPlaywright() {
   }
 }
 
+/**
+ * A fresh session often lands behind an announcement dialog (release notes, onboarding, cookie
+ * consent). Its overlay swallows pointer events for the WHOLE page, so the failure is never "modal
+ * in the way": it is a 30s timeout clicking a button reported visible, enabled and stable.
+ * Dismiss before anything else; fail loudly if one will not go away.
+ */
+export async function dismissBlockingModals(page) {
+  const modals = page.locator('[role="dialog"]:visible, [role="alertdialog"]:visible, dialog[open]:visible');
+  // ponytail: 6 rounds covers a multi-page carousel; a modal that survives it fails the run instead.
+  for (let i = 0; i < 6 && (await modals.count()); i++) {
+    const btn = modals.first().getByRole('button', { name: /^(got it|close|accept|ok|continue|dismiss|skip|no thanks)$/i }).first();
+    if (await btn.count()) await btn.click({ timeout: 5000 }).catch(() => {});
+    else await page.keyboard.press('Escape');
+    await page.waitForTimeout(800);
+  }
+  if (await modals.count()) {
+    const stuck = (await modals.allInnerTexts()).map((t) => t.trim().slice(0, 120));
+    throw new Error(`a modal is blocking the page and would not dismiss: ${JSON.stringify(stuck)}`);
+  }
+}
+
 // Evidence files already written by THIS process. close() starts a file clean the first
 // time and merges on every later call, so a multi-role scenario (one session per role)
 // keeps all of its rows without a fresh run inheriting a stale file.
@@ -64,6 +85,7 @@ const writtenThisRun = new Set();
  * @param {string} [o.out]       evidence directory (default: cwd)
  * @param {string} [o.token]     token source override (see TOKEN)
  * @param {boolean} [o.login]    false = do not log in (public pages, the login flow itself)
+ * @param {boolean} [o.dismissModals] false = leave post-login dialogs open (a scenario that tests one)
  * @param {boolean} [o.resume]   merge into an EXISTING results-<env>.json instead of starting it
  *   clean. For a follow-up round that re-runs a SUBSET; rows are keyed by case name, so prefix
  *   the resumed round's names (`R2 · …`) or they replace the earlier rows.
@@ -158,12 +180,19 @@ export async function open(o = {}) {
       await page.keyboard.press('Escape'); // a still-open panel swallows the next click
       const field = page.getByLabel(label).first();
       const tag = await field.evaluate((el) => el.tagName);
+      // Name the miss: a wrong option otherwise surfaces as a 30s timeout that reads like a broken selector.
+      const miss = (seen) => new Error(`no option "${option}" for "${label}". Available: ${JSON.stringify(seen.slice(0, 20))}`);
       if (tag === 'SELECT') {
+        const seen = (await field.locator('option').allInnerTexts()).map((t) => t.trim());
+        if (!seen.includes(option)) throw miss(seen);
         await field.selectOption({ label: option });
         return;
       }
       await field.click();
-      await page.getByRole('option', { name: option }).first().click();
+      const opt = page.getByRole('option', { name: option }).first();
+      await opt.waitFor({ timeout: 5000 }).catch(() => {});
+      if (!(await opt.count())) throw miss((await page.getByRole('option').allInnerTexts()).map((t) => t.trim()));
+      await opt.click();
     },
 
     /** Click a button or link by its accessible name (string or RegExp). */
@@ -306,6 +335,14 @@ export async function open(o = {}) {
     } catch (e) {
       await browser.close(); // a failed login must not leave the process hanging on the browser
       throw new Error(`login failed (${e2e.loginFlow || 'auth/login'}): ${e.message}`);
+    }
+  }
+  if (o.dismissModals !== false) {
+    try {
+      await dismissBlockingModals(page);
+    } catch (e) {
+      await browser.close();
+      throw e;
     }
   }
   return s;

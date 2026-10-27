@@ -37,7 +37,10 @@ default `qa`. `<out>` from `_shared/output-location.md`.
    (CONTRACT rule 8). `production` is never a valid target.
 2. **Credentials** for that environment: the env vars named in `e2e.credentialsEnv` (or
    `environments.<env>.credentialsEnv`), read from `e2e.envFile`. Missing → ask once, never
-   substitute another environment or account silently. Never print their values.
+   substitute another environment or account silently. Never print their values: to load one for
+   an API call, capture it into a variable (`export QA_EMAIL=$(grep -E '^<VAR>=' <envFile> | cut -d= -f2-)`)
+   and never echo it — the `secrets-guard` hook denies commands that print secret values into the
+   session. For the UI, `/e2e`'s `session.mjs` reads the credentials itself — nothing to load.
 3. **The build under test** is identifiable and actually deployed:
    `gh pr view <n> --json mergedAt,mergeCommit` plus the deploy (`deploy.<env>` in the config
    names its workflows; `gh run list --workflow <wf> --commit <sha>` shows whether it ran). A

@@ -40,19 +40,19 @@ agent file or a subagent prompt — point here.
 - **C1 Title and ticket.** Title `type(<ID>): description` (≤100 chars). The body names the ticket ID (`HR-12`); tickets are local gitignored files, so name, never link. The ticket holds every G0 record.
 - **C2 PR description.** a) one context sentence; b) a flat bullet list (4-8), one unit of observable behavior per bullet; c) `Modified flows:` one per line in plain language; d) `Env vars:` added/changed/removed, omitted when none.
   - No group headings. One line per bullet, each fact once. A feature's plumbing is one bullet. Describe the what; the why only when not evident.
-- **C3 Preconditions before merge.** (a) Tech Lead approval — **not required for bug-fix PRs** (`fix(...)`), which merge on green CI plus the user's go-ahead; (b) CI green.
+- **C3 Preconditions before merge.** (a) Tech Lead approval — **not required for bug-fix and chore PRs** (`fix(...)`, `chore(...)`), which merge on green CI plus the user's go-ahead; (b) CI green.
 
 ## Layer D — Git and outward-facing actions
 
 - **D1 Branch = ticket ID.** Branch name is the bare ticket ID (`HR-12`), created in a worktree under `git.worktreesDir`, never with `checkout -b` in the main checkout.
-- **D2 Push only on an explicit OK.** Commit freely; `git push`, PR creation, merges, tags and deploys need an explicit go-ahead in the current request.
+- **D2 Push only on an explicit OK.** Commit freely; `git push`, PR creation, merges, tags and deploys need an explicit go-ahead in the current request. The `outward-gate` hook asks before each one and refuses a merge with changes requested.
 - **D3 No self-attribution.** No `Co-Authored-By`, "Generated with" or session links in commits, PR bodies or ticket comments.
 
 ## G0 — traceability
 
 Rules needing prior Tech Lead approval — **S2 refactors, S5 migrations, B5 new libraries** — are
 recorded on the ticket as a comment in two parts: (1) the proposal — what, why, risk; (2) the Tech
-Lead's confirmation. Record with `node .claude/skills/_lib/ticket.mjs comment <ID> <file>`.
+Lead's confirmation. Record with `node .claude/skills/_lib/ticket.mjs comment <ID> <file>` (short shape, `_shared/ticket-comment.md`). The pipeline then writes `<out>/g0-approved.md`; the `g0-gate` hook blocks migrations and new dependencies until it exists.
 
 ### Pipeline gate
 
@@ -67,4 +67,10 @@ A pipeline reaching an S2, S5 or B5 trigger **stops before writing code**, print
 | B4 (audit table) | `.claude/skills/_shared/reuse-audit.md` |
 | B6, C3b (commands) | `.claude/skills/_shared/verify-commands.md` + stack profile |
 | B10 (mechanical) | `.claude/hooks/no-any-casts.cjs` |
+| D2 (asks before push, PR, merge, tag, workflow run) | `.claude/hooks/outward-gate.cjs` |
+| S5, B5 (G0 marker) | `.claude/hooks/g0-gate.cjs` |
+| Customization literals | `.claude/hooks/no-customer-literals.cjs` (`guards.forbiddenLiterals`) |
+| /fix test lock | `.claude/hooks/test-lock.cjs` |
+| Secret values never printed | `.claude/hooks/secrets-guard.cjs` + `settings.json` deny rules |
+| Hook self-check | `bash .claude/hooks/test-hooks.sh` |
 | S5 `down` | `.claude/agents/backend.md` → Migrations |

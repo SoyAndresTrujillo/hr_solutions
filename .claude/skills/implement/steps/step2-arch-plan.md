@@ -70,6 +70,11 @@ the same ticket.
 Then `AskUserQuestion`: G0 recorded — continue / Drop the trigger from the plan / Regenerate the plan.
 Never assume approval. A refactor that is approved still ships in its own PR (§S2).
 
+**On "G0 recorded — continue"** write `<out>/g0-approved.md` (trigger, the ticket comment date of the
+approver's confirmation, approver, date). The `g0-gate` hook (`.claude/hooks/g0-gate.cjs`) refuses to
+write a migration or change a dependency until that file exists for the branch's ticket. It is the
+record the hook reads, so never create it without the user's confirmation.
+
 ## APPROVAL GATE (per router protocol)
 ```
 Implementation plan complete for <ID>.

@@ -50,6 +50,11 @@ A ticket whose status claims done but has **no commit, branch or working doc** i
 
 Write the list to `<docsDir>/<PARENT>/bug-bundle-<round>.md`: one section per bug (repro, actual, expected with the **exact** message strings), a table grouping them by kind, and an "already fixed" table with commit refs.
 
+**Progress tree.** Before the ticket list runs, create `<docsDir>/<PARENT>/progress-<round>.md`
+from the `/bug-bundle` skeleton in `.claude/skills/_shared/progress-tree.md` §5 (or resume from it,
+§4). Update it before and after every sub-step and dispatch; after the scope gate add one
+branch per bug. Each bug's `/fix` run writes into its branch here, never its own `progress.md`.
+
 **Gate:** show the list, confirm scope, then run.
 
 ---
@@ -162,7 +167,9 @@ Keep the matrix either way.
 
 ## Phase 4 — Bundle PR
 
-`/create-pr` with the `bundle-fix` template, on the user's ship-word (team-rules §D2). Description shape is §C1/§C2 in `.claude/skills/_shared/team-rules.md` — `/create-pr` owns it, do not restate it here. A bug-fix PR needs no Tech Lead approval (§C3a); no attribution (§D3). Beyond the per-ticket table the body must carry:
+`/create-pr` with the `bundle-fix` template, on the user's ship-word (team-rules §D2). Its Step 2.5
+reviews the whole bundle against `.claude/REVIEW.md` before the push and stops on an Important finding;
+the result lands in `<docsDir>/<PARENT>/review-findings.md`. Description shape is §C1/§C2 in `.claude/skills/_shared/team-rules.md` — `/create-pr` owns it, do not restate it here. A bug-fix PR needs no Tech Lead approval (§C3a); no attribution (§D3). Beyond the per-ticket table the body must carry:
 
 - every **product decision** the bundle forces (a rule that contradicts the form, a previous decision reversed) — stated, not buried;
 - the **absence checks**, and what was verified untouched;
@@ -180,6 +187,11 @@ node .claude/skills/_lib/ticket.mjs status <ID>
 node .claude/skills/_lib/ticket.mjs transition <ID> --to "<statusFlow.prOpened>"
 ```
 
+- **Attach the record to each ticket** (the ticket is the source of truth for what was asked, decided
+  and proven): that bug's `root-cause.md`, the round's `e2e-results-<round>.md` and the bundle's
+  `review-findings.md` (written by `/create-pr` Step 2.5) — `comment <ID> <file.md> --attach <files…>`.
+  Write the comment in the short format of `.claude/skills/_shared/ticket-comment.md`, naming each
+  attached file. Ticket files are local — no outward gate.
 - **Re-read the status immediately before transitioning.** Statuses drift while you work — a whole set can move between two reads in one session. Already at or past `statusFlow.prOpened` → leave it.
 - A bug blocked at G0 or stopped after two failed rounds keeps its status; its comment says why.
 - Comments are outward-facing: no internal paths, skills, or memory references. Restate rules in plain engineering terms. The PR link goes in the comment.
@@ -201,6 +213,8 @@ Carry forward into it: the per-bug expected strings from Phase 1, and the covera
 <docsDir>/<PARENT>/
 ├── bug-bundle-<round>.md          # the list + shape + already-fixed
 ├── e2e-results-<round>.md         # local verification matrix
+├── progress-<round>.md            # live progress tree for the whole bundle
+├── review-findings.md             # /create-pr Step 2.5 AI review of the bundle
 └── <ID>/
     ├── ticket.md                  # ingested ticket (+ images/)
     ├── bug-report.md

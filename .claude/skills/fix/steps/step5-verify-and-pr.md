@@ -39,5 +39,14 @@ PR merges on green CI plus the user's go-ahead — no Tech Lead approval (§C3a)
 
 ## 5.3 Self-improvement
 
-If the root cause reveals a recurring class of mistake, append it to `.claude/tasks/lessons.md`. Three
-or more similar bugs → propose a rule for `CLAUDE.md` (§Reuse or §Customization).
+If the root cause reveals a recurring class of mistake, append it to `.claude/tasks/lessons.md`, and in
+the same change:
+
+- **A class of agent mistake → an eval case.** Add `.claude/evals/cases/<name>.json` (format in
+  `.claude/evals/README.md`), run that one case with `/eval-config <name>`, and note the result in the
+  lesson. A lesson nothing runs is a lesson that recurs.
+- **A rule the agent must see while editing → `.claude/rules/code-rules.md`** (loaded on every
+  product-code edit), one line ending with the ticket ID.
+- **Three or more similar bugs → propose a rule for `CLAUDE.md`** (§Reuse or §Customization), and a
+  hook in `.claude/hooks/` plus its case in `.claude/hooks/test-hooks.sh` if the rule must always hold
+  (pattern: `.claude/hooks/no-any-casts.cjs`).

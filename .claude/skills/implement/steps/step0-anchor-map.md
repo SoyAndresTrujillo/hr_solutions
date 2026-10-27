@@ -3,9 +3,12 @@
 1. Determine input mode (ticket / session context). Extract or ask for the ID (prefix = `ticketPrefix`
    in the config) + description.
 2. Create the output folder `<out>` if needed (location rules: `.claude/skills/_shared/output-location.md`).
-3. Check existing artifacts in `<out>`:
-   - `requirements-spec.md` exists → ask: _"Requirements spec exists. Use it and skip to Step 2, or regenerate?"_
-   - `implementation-plan.md` also exists → ask: _"Implementation plan exists too. Skip to Step 3 (phases), or redo from Step 2?"_
+2.5. **Progress tree.** `<out>/progress.md` exists → resume from it (`_shared/progress-tree.md` §4).
+   Else write the `/implement` skeleton (§5) now, before anything else runs.
+3. Check existing artifacts in `<out>` against the tree — an artifact whose gate item is not
+   `approved` was never approved:
+   - `requirements-spec.md` approved → ask: _"Requirements spec exists. Use it and skip to Step 2, or regenerate?"_
+   - `implementation-plan.md` also approved → ask: _"Implementation plan exists too. Skip to Step 3 (phases), or redo from Step 2?"_
    - `module-handoff/M*.md` exist → resume Step 4 per `_shared/module-cascade.md` §6.
 3.5. **Ticket ingest — run it here, once.** Follow `.claude/skills/_shared/ticket-ingest.md`
    (`node .claude/skills/_lib/ticket.mjs ingest <ID> <out>`): it writes `<out>/ticket.md` (+ `images/`)

@@ -154,10 +154,30 @@ gh run view <run-id> --log-failed | head -60
 ```
 
 Some failures are environmental, not code — e.g. a persistent CI database missing a migration merged
-earlier, or regenerated snapshots leaving a dirty tree. Name the cause; the user fixes the environment
-(or commits the snapshots), then `gh run rerun --failed <run-id>`.
+earlier, or regenerated snapshots leaving a dirty tree. The project's known ones, with their fix, are
+listed in the stack profile or `CLAUDE.md`.
 
-Anything else — hand it back with the log excerpt. Then, green:
+**Triage every red run, read-only (judgment steps start read-only).** Do this before handing anything
+back:
+
+1. Save the failing log: `gh run view <run-id> --log-failed > <out>/ci-failure-<run-id>.log`
+2. Dispatch one `general-purpose` agent (read-only: Read, Grep, Glob, `git diff`, `git log`, `gh run
+   list/view`) with the log path, the PR diff range `<main>...HEAD`, and this task: classify the
+   failure as exactly one of
+   - **real** — the failing test or error points at a file this PR changed (name the `file:line`);
+   - **pre-existing** — the same check fails on `<main>` (`gh run list --branch <main> --workflow <name> -L 5`);
+   - **flaky** — the same test passed and failed on the same SHA, or the error is a timeout/network blip;
+   - **environment** — one of the known environment fixes listed in the stack profile or `CLAUDE.md`.
+3. Write `<out>/ci-triage.md`: class, likely cause with `file:line`, next action.
+4. Post three lines on the PR (`gh pr comment`; the `outward-gate` hook asks first): class, cause,
+   next action.
+5. Act on the class — never by rerunning blindly or merging over it:
+   **real** → back to `/fix` or `/address-review`; **environment** → the listed fix (the user applies
+   it when it touches shared infrastructure), then `gh run rerun --failed <run-id>`; **pre-existing** →
+   report it with the `<main>` run link and stop; **flaky** → tell the user, and rerun only on their
+   go-ahead.
+
+Then, green:
 
 ```bash
 node .claude/skills/_lib/ticket.mjs status <ID>
@@ -251,6 +271,10 @@ and only then:
 ```bash
 gh pr merge <PR> --squash --delete-branch
 ```
+
+The merge itself goes through the `outward-gate` hook: a PR with changes requested is **refused**
+(→ `/address-review <PR>`, then a new approval); otherwise it asks, showing the review state and any
+failing or still-running checks.
 
 `--squash` is the only permitted merge mode. Never `--merge`, never `--rebase`, never `--auto` (it
 merges later, unattended, outside the gate).
@@ -350,6 +374,7 @@ comment or its transition here.
 | `gh pr checks --watch` exits non-zero | read the filtered rollup — the failure may be an ignored workflow; if real, `gh run view <id> --log-failed \| head -60` |
 | CI red on a missing table/column right after another PR's migration | persistent CI database behind; the user migrates it, then `gh run rerun --failed` |
 | CI red right after a snapshot update | regenerated snapshots left a dirty tree; commit them |
+| `gh pr merge` refused: "changes requested" | `/address-review <PR>`, get a new approval, re-run Phase 4 |
 | `transition` rejected | unknown status name; check `statuses` / `statusFlow` in the config |
 | `gh run watch` returns immediately | you watched an already-completed run — check its `headSha` matches the merge commit |
 | Deploy red, log says the target already has an active deployment | a colleague's deploy held it; wait for it, then `gh run rerun --failed <id>` |

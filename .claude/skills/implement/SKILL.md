@@ -49,6 +49,13 @@ dispatch.
 **The ticket is ingested once, at Step 0.** No later step re-reads the tracker — every step reads
 `<out>/ticket.md`.
 
+## Progress tree (every run)
+
+A live checklist of every step and sub-step: `<out>/progress.md`. Format, markers, update rules, resume
+rules and this pipeline's skeleton: `.claude/skills/_shared/progress-tree.md` — read it at Step 0,
+create the tree before anything else runs, and update it before and after every sub-step and agent
+dispatch. The user watches it to know where the run is.
+
 ## Approval Gate Protocol (every gate)
 
 > **HARD STOP.** Each gate is a genuine user decision point.
@@ -56,8 +63,10 @@ dispatch.
 > 2. `AskUserQuestion`: Approve — continue / Request changes / Regenerate this step.
 > 3. Never execute the next step in the same turn as artifact generation without approval.
 > 4. "Request changes" → ask what, re-run the current step only.
-> 5. **After context summarization:** re-read this SKILL.md + the current step file; restate the
->    approved-gate state in the first message after resume.
+> 4a. Record the decision in the progress tree (`_shared/progress-tree.md` §3.4) — it is the only
+>    record that a gate was approved.
+> 5. **After context summarization:** re-read the progress tree, this SKILL.md + the current step
+>    file; restate the approved-gate state from the tree in the first message after resume.
 
 ## Pipeline
 

@@ -1,8 +1,13 @@
 # Output location + auto-numbering — every skill that writes docs
 
 `<docsDir>` comes from `.claude/kit.config.json` (default `.claude/docs/ai`). This is the handoff bus:
-every artifact one skill leaves for another lives here. **No skill writes docs anywhere else** — one
-exception: `/code-reviewer` with no ticket writes `.claude/code-reviews/<branch>.md`.
+every artifact one skill leaves for another lives here. **No skill writes docs anywhere else** — two
+exceptions: `/code-reviewer` with no ticket writes `.claude/code-reviews/<branch>.md`, and
+`.claude/scripts/sdlc-metrics.mjs` writes `<docsDir>/../metrics/<YYYY-MM>.md` (outside the bus, so it is
+never read back as input).
+
+Runtime state that is not a doc lives in the ticket worktree: `.claude/state/test-lock.json` (/fix S4,
+read by the `test-lock` hook). Eval results live in `.claude/evals/results/`.
 
 ## Location — `<out>`
 
@@ -30,18 +35,25 @@ List files in `<out>` matching `[0-9][0-9][0-9]*.md`, take the highest prefix + 
 | File in `<out>` | Writer | Readers |
 |---|---|---|
 | `ticket.md`, `images/` | ticket-ingest (implement, fix, bug-bundle, code-reviewer, qa-report) | every later step |
-| `functional.md`, `questions.md` | refiner | implement S1+S6, fix S1, qa-report P2, code-reviewer |
+| `functional.md`, `questions.md` | refiner (S6 attaches `functional.md` to the ticket comment) | implement S1+S6, fix S1, qa-report P2, code-reviewer |
+| `refinement-comment.md` | refiner S6 | — (posted as the ticket comment) |
+| `progress.md` | implement S0+, fix S0+ (`_shared/progress-tree.md`) | resume, user, sdlc-metrics |
+| `g0-approved.md` | implement S2, fix S3 (on "G0 recorded — continue") | `g0-gate` hook |
 | `requirements-spec.md` | implement S1, requirements-analyst | implement S2, review-implementation |
 | `test-design/pict-model.md` | requirements-analyst (optional PICT) | implement S1, fix S1 (when present) |
 | `anchor-map.md` | implement S0, fix S0 | every later step |
 | `implementation-plan.md` | implement S2 | implement S3-S6 |
 | `NNNa_backend_*.md`, `NNNb_frontend_*.md` | implement S3, fix S3 | implement/fix S4 |
 | `module-handoff/M<i>-<module>.md` | module-cascade | next module, resume |
-| `bug-report.md`, `root-cause.md` | fix S1, S2 | create-pr (body) |
+| `bug-report.md`, `root-cause.md` | fix S1, S2 | create-pr (body, ticket attachment), bug-bundle P5 |
+| `review-findings.md` | create-pr S2.5, address-review (rerun) | create-pr S8 (first PR comment), bug-bundle P5, address-review, sdlc-metrics |
+| `pr-comment.md` | create-pr S8 | — (posted as the ticket comment) |
+| `ci-triage.md`, `ci-failure-<run-id>.log` | ship P2 | user, address-review, sdlc-metrics |
 | `pr-shape.md` | fix S0, bug-bundle | create-pr |
 | `qa/e2e.mjs`, `e2e-results.md`, `results-<env>.json` | e2e via implement S6 / fix S5 / bug-bundle P3 | qa-report P1 |
 | `ticket-comment[-N].md`, `qa-results.md` | qa-report | qa-report next round |
 | `ship-comment.md` | ship P1 | — (posted as the ticket comment) |
 | `audit/spec-audit[-N].md` | review-implementation | user |
 | `code-review[-followup-<sha>].md` | code-reviewer | code-reviewer follow-up |
-| `<PARENT>/bug-bundle-<round>.md`, `<PARENT>/e2e-results-<round>.md` | bug-bundle | qa-report |
+| `<PARENT>/bug-bundle-<round>.md`, `<PARENT>/e2e-results-<round>.md` | bug-bundle | qa-report, bug-bundle P5 (attachment) |
+| `<PARENT>/progress-<round>.md` | bug-bundle (and each /fix it runs) | resume, user, sdlc-metrics |

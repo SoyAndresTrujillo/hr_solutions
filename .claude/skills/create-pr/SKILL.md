@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: Create a pull request following the project workflow. Handles staging, committing (conventional commits), the fast gate on changed files, pushing, and creating the PR on GitHub with the gh CLI and the body templates in templates/. Use when the user says 'create pr', 'push and create pr', 'open pr', or 'submit pr'.
+description: Create a pull request following the project workflow. Handles staging, committing (conventional commits), the fast gate on changed files, an AI review against .claude/REVIEW.md, pushing, creating the PR on GitHub with the gh CLI and the body templates in templates/, then the review comment and the ticket record. Use when the user says 'create pr', 'push and create pr', 'open pr', or 'submit pr'.
 ---
 
 # Create PR
@@ -88,7 +88,7 @@ body, labels and assignee, and comment the supersede link on the closed one.
      exit $RC
      ```
 
-### Step 2.5: Fast gate on the changed files
+### Step 2.4: Fast gate on the changed files
 
 Before anything leaves the machine, run the **fast gate** from `.claude/skills/_shared/verify-commands.md`
 (commands: stack profile `.claude/stacks/<stack>.md` §Fast gate) on the changed files only:
@@ -102,6 +102,29 @@ git diff --name-only <main>...HEAD     # the branch's files — the gate's scope
   Step 2 rules.
 - Errors in the changed files → **stop, report them, do not push.** Errors outside the changed files
   are pre-existing: list them in the report, never auto-fix.
+
+### Step 2.5: AI review (before pushing)
+
+Every PR gets the same review passes before it leaves the machine. Rules of the review — passes,
+severity, what not to report, output table — live in `.claude/REVIEW.md`. Do not restate them here.
+
+1. **Skip only** when the branch changes no product code (`git diff --name-only <main>...HEAD` has
+   nothing under `<api>/` or `<web>/`). Record `AI review: skipped (no product code)` for Step 7.0 and
+   go to Step 3.
+2. Resolve the ticket folder `<out>`: `find <docsDir> -type d -name "<ID>" | head -1` (may be empty →
+   `<docsDir>/<branch>/`, `_shared/output-location.md`). On a `/bug-bundle` branch the ID is the parent.
+3. Dispatch one `code-reviewer` agent (`.claude/agents/code-reviewer.md`) with: the ticket ID, the
+   `<out>` path, `.claude/REVIEW.md`, and the instruction "review `<main>...HEAD` in this checkout;
+   follow REVIEW.md; return only its output table and the count line; do not edit files". Paths, never
+   pasted file contents.
+4. Write the returned table to `<out>/review-findings.md`, with the date and the head SHA
+   (`git rev-parse --short HEAD`) at the top.
+5. **Any Important finding → stop.** Show the table and ask (`AskUserQuestion`):
+   - **Fix now** — return to the pipeline step that owns the code (`/implement` Step 4 module
+     cascade, `/fix` Step 4), then rerun Step 2.4 and this step;
+   - **Waive** — ask for the reason, append it under the finding in `review-findings.md`;
+   - **Open as draft** — continue, create the PR with `--draft`, and leave the finding open.
+6. Keep the count line for Step 7.0: `AI review: <N> Important (<fixed|waived|open>), <M> Nits`.
 
 ### Step 3: Push — explicit OK only
 
@@ -267,6 +290,9 @@ a flat bullet list → `Modified flows:` → `Env vars:` (dropped when nothing c
 file, a line or a layer. Filling it wrong is a C2 violation and blocks the merge, so check the filled
 body against §C2 before `gh pr create`.
 
+After the C2 body, add one plain line (no heading): the Step 2.5 count line followed by
+`— see the first comment`, e.g. `AI review: 0 Important, 2 Nits — see the first comment`.
+
 ```bash
 TEMPLATE_PATH=".claude/skills/create-pr/templates/${TEMPLATE_NAME}.md"
 TEMPLATE_BODY=$(awk '/^```markdown$/{flag=1; next} /^```$/{flag=0} flag' "$TEMPLATE_PATH")
@@ -292,7 +318,7 @@ MAIN=$(node -p "require('./.claude/kit.config.json').git.mainBranch")
   --title "<type>(<ID or branch-name>): <short description>" \
   --assignee "$GH_USER" \
   --label "<label>" --label "<label>" \
-  --body "$TEMPLATE_BODY"
+  --body "$TEMPLATE_BODY"          # add --draft when Step 2.5 chose "Open as draft"
 ```
 
 - **Title** `<type>(<ID>): <description>` and the ticket file linked in the body — §C1. That ticket
@@ -307,7 +333,33 @@ MAIN=$(node -p "require('./.claude/kit.config.json').git.mainBranch")
 
 Return the PR URL to the user.
 
-### Step 8: Move the ticket(s) to review
+### Step 8: Review comment and ticket record (new and existing PRs)
+
+Runs after Step 6 (existing PR updated) or Step 7.1 (new PR).
+
+1. **PR comment** — post `review-findings.md` (table, count line, waivers with their reasons) as the
+   first comment. Outward-facing — the `outward-gate` hook asks:
+   ```bash
+   "$GH" pr comment <PR_NUMBER> --body-file <out>/review-findings.md
+   ```
+   Skip when Step 2.5 was skipped.
+2. **Ticket record** (the ticket is the source of truth for what was asked, decided and proven). From
+   `<out>`, attach the files that exist:
+   - `/implement` (`requirements-spec.md` present): `requirements-spec.md`, `implementation-plan.md`,
+     `review-findings.md`, `e2e-results.md`;
+   - `/fix` (`root-cause.md` present): `root-cause.md`, `review-findings.md`, `e2e-results.md`;
+   - `/bug-bundle` (`bundle-fix` template): handled per ticket in its Phase 5 — skip here.
+
+   Write `<out>/pr-comment.md` in the short format of `.claude/skills/_shared/ticket-comment.md`
+   (Summary / Findings / Decisions / Needs / Links, at most 10 bullets), naming each attached file and
+   the PR URL, then:
+   ```bash
+   node .claude/skills/_lib/ticket.mjs comment <ID> <out>/pr-comment.md --attach <files…>
+   ```
+   Ticket files are local — no outward gate. No ticket ID → skip and say so. A `ticket.mjs` error →
+   report it once; the PR stands.
+
+### Step 9: Move the ticket(s) to review
 
 For each ticket ID in `TICKET_IDS` (never the parent — `_shared/ticket-ingest.md`), after Step 6 or 7:
 
@@ -341,8 +393,11 @@ docs(<ID>): documentation changes
 - ALWAYS conventional commits with the ticket ID from the branch name (branch name as fallback)
 - Branch name = bare ticket ID (§D1). Fix it BEFORE the first push (Step 1.5)
 - ALWAYS new commits (never amend unless explicitly asked)
-- Fast gate on changed files before any push (Step 2.5); never a full-repo gate
-- Push and PR creation only on an explicit OK in the current request (§D2)
+- Fast gate on changed files before any push (Step 2.4); never a full-repo gate
+- NEVER open a PR over an unhandled Important review finding (Step 2.5): fix it, waive it with a
+  reason, or open the PR as draft
+- Push and PR creation only on an explicit OK in the current request (§D2); the `outward-gate` hook
+  also asks before `git push`, `gh pr create` and `gh pr comment`
 - No `Co-Authored-By`, `Authored-By`, "Generated with" or any attribution trailer in commits or PR
   bodies (§D3)
 - PR descriptions describe the **what** — one unit of behavior per bullet (§C2)

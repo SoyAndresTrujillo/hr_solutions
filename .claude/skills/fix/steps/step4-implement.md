@@ -44,6 +44,21 @@ Return result as JSON matching this shape (no prose around it):
 `tsc_new_errors` / `eslint_clean` = the typecheck and lint halves of the stack profile §Fast gate,
 whatever tools the profile names.
 
+## Test lock (hook-enforced)
+
+The agent fixing the code must not weaken the tests that check it.
+
+1. Before dispatching the agent, main writes `.claude/state/test-lock.json` in the ticket worktree:
+   `{ "ticket": "<ID>", "allow": ["<repo-relative regression spec from root-cause.md>"], "created": "<ISO>" }`.
+   The regression spec is the only test file the agent may write or change.
+2. While the lock exists, the `test-lock` hook (`.claude/hooks/test-lock.cjs`) denies edits to any
+   other test file. A fix round that needs another test changed means the root cause is wrong: return
+   to Step 2. Never delete the lock to get past it.
+3. Exception: the patch changes behaviour on purpose and existing expectations must change (the
+   `/bug-bundle` "existing tests that go red are the proof" case). Ask the user, add those files to
+   `allow` with the reason, and list them in the PR.
+4. Remove the lock when the fast gate and the regression spec are green, before Step 5.
+
 ## Main context verification
 
 After the subagent returns, main runs the **fast gate** from

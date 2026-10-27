@@ -6,12 +6,33 @@ Project facts go here; workflow rules live in `.claude/skills/_shared/`.
 ## Workflow
 
 - Pipelines: `/refiner` → `/implement` | `/fix` | `/bug-bundle` → `/create-pr` → `/ship` → `/qa-report`
-  → `/cherry-pick-deploy`. Side: `/rebase-main`, `/review-implementation`, `/code-reviewer`,
-  `/requirements-analyst`. Map: `.claude/skills/README.md`.
+  → `/deploy-all` | `/cherry-pick-deploy`. Side: `/address-review`, `/rebase-main`,
+  `/review-implementation`, `/code-reviewer`, `/requirements-analyst`, `/eval-config`.
+  Map: `.claude/skills/README.md`.
+- Hooks enforce what prose cannot (`.claude/settings.json`). When one stops you, fix the cause; never
+  delete its marker or edit `settings.json` mid-task.
 - Tickets are local files in `tickets/` — only through `node .claude/skills/_lib/ticket.mjs`.
 - Team rules: `.claude/skills/_shared/team-rules.md`. Verification: `.claude/skills/_shared/verify-commands.md`.
 - Config: `.claude/kit.config.json`. Stack commands: `.claude/stacks/node-react-vite.md`.
-- After any correction from the user: add a rule to `.claude/tasks/lessons.md`.
+- After any correction from the user: add the lesson to `.claude/tasks/lessons.md`, then route it:
+  a rule the agent must see while editing → one line in `.claude/rules/code-rules.md`; a rule that
+  must always hold → a hook in `.claude/hooks/` plus its case in `.claude/hooks/test-hooks.sh`; a
+  class of agent mistake → an eval case in `.claude/evals/cases/` (run with `/eval-config`).
+- After editing this file, a rule, a skill, an agent, a hook or the model routing: run `/eval-config`.
+- Every pipeline run keeps a live checklist in `<out>/progress.md` (`_shared/progress-tree.md`).
+
+## Testing
+
+- Changed files only, one test process at a time under `flock <testLock>` — commands in
+  `.claude/skills/_shared/verify-commands.md` + stack profile §Targeted tests. Never a full-repo suite.
+- During /fix, `.claude/state/test-lock.json` limits test edits to the regression spec (`test-lock` hook).
+
+## Git
+
+- Never commit to the main branch. Branch = bare ticket ID, in a worktree under `git.worktreesDir`.
+- Commits: `feat(<ID>): …`, `fix(<ID>): …`, `wip(<ID>): …`. No self-attribution (team-rules §D3).
+- Push, PR, merge, tag and deploy need an explicit OK (§D2); the `outward-gate` hook asks before
+  each one. Migrations and new dependencies need `<out>/g0-approved.md` first (`g0-gate` hook).
 
 ## Stack
 

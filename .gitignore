@@ -12,3 +12,12 @@ dist/
 !.env.example
 *.log
 .DS_Store
+.claude/state/
+.claude/evals/results/
+!env.example
+__pycache__/
+*.pyc
+venv/
+.venv/
+postgres_data/
+.vite/

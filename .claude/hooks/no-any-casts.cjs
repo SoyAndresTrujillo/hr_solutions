@@ -8,17 +8,18 @@
  *   1. Read tool_input.file_path from PostToolUse stdin envelope
  *   2. `git diff -U0 HEAD -- <file>` → parse hunk headers for new-file line ranges
  *   3. Scan full file, flag forbidden patterns only on lines inside those ranges
- *   4. If git unavailable (no repo, no HEAD yet) → fallback to scanning all
- *      so brand-new files still get checked
+ *   4. Brand-new (untracked) file, or git unavailable → scan the whole file
+ *      (lib/diff-lines.cjs returns null)
+ *   Skips kit scripts under .claude/ (not product code).
  *
  * Enforces team-rules §B10 (no any/unknown casts).
  * Triggers from .claude/settings.json (.cjs so a "type": "module" root package.json cannot break it):
- *   PostToolUse matcher = "Edit|Write"
+ *   PostToolUse matcher = "Edit|Write|MultiEdit"
  */
 
 const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const { getChangedLineRanges, inRange } = require('./lib/diff-lines.cjs');
+const { repoRelative } = require('./lib/hook-io.cjs');
 
 const FORBIDDEN_PATTERNS = [
   { rx: /\bas\s+any\b/, label: '`as any`' },
@@ -38,48 +39,6 @@ function readStdin() {
   }
 }
 
-/**
- * Returns array of [startLine, endLine] inclusive ranges in the NEW file
- * that the working tree has changed vs HEAD. Returns:
- *   - []   when file matches HEAD (no diff)
- *   - null on git failure (caller should fallback to full scan)
- */
-function getChangedLineRanges(filePath) {
-  try {
-    const repoRoot = execSync('git rev-parse --show-toplevel', {
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-    const rel = path.relative(repoRoot, filePath).replace(/\\/g, '/');
-    const diff = execSync(`git diff -U0 HEAD -- "${rel}"`, {
-      cwd: repoRoot,
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-    if (!diff.trim()) {
-      // File matches HEAD — nothing of ours to check.
-      return [];
-    }
-    const ranges = [];
-    const hunkRe = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm;
-    let m;
-    while ((m = hunkRe.exec(diff)) !== null) {
-      const start = parseInt(m[1], 10);
-      const count = m[2] !== undefined ? parseInt(m[2], 10) : 1;
-      if (count === 0) continue; // pure deletion at this position
-      ranges.push([start, start + count - 1]);
-    }
-    return ranges;
-  } catch (_e) {
-    return null;
-  }
-}
-
-function inRange(ln, ranges) {
-  if (ranges === null) return true; // fallback: scan all
-  return ranges.some(([s, e]) => ln >= s && ln <= e);
-}
-
 function main() {
   const raw = readStdin();
   if (!raw.trim()) {
@@ -95,7 +54,9 @@ function main() {
 
   const filePath =
     payload?.tool_input?.file_path ?? payload?.tool_input?.path ?? '';
-  if (!filePath || !TARGET_EXT.test(filePath)) {
+  // Product code only: kit scripts under .claude/ are not in scope.
+  const rel = filePath ? repoRelative(filePath) : null;
+  if (!filePath || !TARGET_EXT.test(filePath) || (rel && rel.startsWith('.claude/'))) {
     process.exit(0);
   }
 
@@ -130,7 +91,7 @@ function main() {
 
   const scopeNote =
     ranges === null
-      ? '(git diff unavailable — scanned whole file)'
+      ? '(new file or git diff unavailable — scanned whole file)'
       : '(scanned only your changed lines vs HEAD)';
 
   const message = [

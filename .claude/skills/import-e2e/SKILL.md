@@ -100,6 +100,8 @@ It exports no `run`, so `/e2e`'s `flow-check` ignores it. Add a `Note:` to
   `upload` (AskUserQuestion Run / Cancel) — QA fine with consent; production is refused by
   `session.mjs` in code.
 - Never hardcode credentials in scripts, descriptors or docs — env only.
+- An import that would create, change or revoke **user accounts or access** is out of bounds —
+  stop and ask before uploading it.
 - Each run leaves records behind — tell the user what was created so they can clean up.
 
 ## Extending to other imports
